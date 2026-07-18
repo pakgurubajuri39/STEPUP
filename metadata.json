@@ -1,0 +1,6 @@
+{
+  "name": "Kumon Math Problem Generator",
+  "description": "An interactive, AI-powered Kumon-Style Math Problem Generator Engine following the curriculum and levels of the Kumon methodology.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

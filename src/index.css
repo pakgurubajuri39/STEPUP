@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-kumon-serif {
+    font-family: "Times New Roman", Times, "Playfair Display", Georgia, serif;
+  }
+}
+
+/* Custom scrollbar and printing optimizations */
+@media print {
+  body {
+    background-color: #ffffff !important;
+  }
+  .print-hidden {
+    display: none !important;
+  }
+}
+
+/* Clean Minimalism Focus and transitions */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
