@@ -255,6 +255,20 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
           </div>
 
           <button
+            onClick={() => {
+              setActiveMode("print");
+              setTimeout(() => {
+                window.print();
+              }, 100);
+            }}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+            title="Cetak Lembar Kerja"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Cetak
+          </button>
+
+          <button
             onClick={handleDownloadMarkdown}
             className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 cursor-pointer"
             title="Download Markdown"

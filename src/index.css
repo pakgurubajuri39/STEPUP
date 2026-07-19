@@ -8,11 +8,72 @@
 
 /* Custom scrollbar and printing optimizations */
 @media print {
-  body {
+  html, body {
+    background: #ffffff !important;
     background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .print-hidden {
+  
+  /* Hide all screen-only UI elements */
+  .print-hidden, 
+  header, 
+  footer, 
+  #left-workspace-column, 
+  #stats-hud, 
+  #error-banner,
+  .print\:hidden {
     display: none !important;
+  }
+
+  /* Reset layout constraints for printing */
+  #stepup-math-app, 
+  main, 
+  #right-workspace-column {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure the worksheet container is full size without borders/shadows */
+  #worksheet-viewer {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Optimize the printable page container */
+  #print-sheet-panel {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  #print-sheet-panel > div {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Avoid breaking questions across pages where possible */
+  #print-questions-grid > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 
