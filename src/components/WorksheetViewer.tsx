@@ -154,25 +154,47 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
 
   // Download raw markdown file of the worksheet
   const handleDownloadMarkdown = () => {
-    let mdContent = `### 📝 WORKSHEET KUMON STYLE\n`;
+    let mdContent = `# 📝 LEMBAR KERJA MATEMATIKA - STEPUP STUDY\n`;
+    mdContent += `*Matematika Berjenjang Berdasarkan Prinsip Small Steps*\n\n`;
     mdContent += `**Level:** ${worksheet.level}\n`;
-    mdContent += `**Topik:** ${worksheet.topic}\n`;
-    mdContent += `**Waktu Penyelesaian Standar (SCT):** ${worksheet.sctMinutes}\n\n`;
-    mdContent += `**Instruksi:** ${worksheet.instruction}\n\n`;
+    mdContent += `**Topik/Materi:** ${worksheet.topic}\n`;
+    mdContent += `**Waktu Pengerjaan Standar (SCT):** ${worksheet.sctMinutes} Menit\n\n`;
+    mdContent += `---\n\n`;
+    mdContent += `## IDENTITAS SISWA:\n`;
+    mdContent += `* Nama: _________________________\n`;
+    mdContent += `* Tanggal: _______________________\n`;
+    mdContent += `* Nilai: _________________________\n`;
+    mdContent += `* Durasi Pengerjaan: ______________ s.d ______________ menit\n\n`;
+    mdContent += `---\n\n`;
+    mdContent += `## INSTRUKSI:\n`;
+    mdContent += `*${worksheet.instruction || "Selesaikan operasi hitung berikut secara mandiri, teliti, dan bertahap!"}*\n\n`;
+    mdContent += `---\n\n`;
+    mdContent += `## DAFTAR SOAL:\n\n`;
 
     worksheet.questions.forEach((q, idx) => {
-      mdContent += `${idx + 1}. ${q.questionText}\n`;
+      mdContent += `### **[ ${idx + 1} ]**\n`;
+      mdContent += `  **Soal:** ${q.questionText}\n`;
       if (q.isExample) {
-        mdContent += `   *Contoh Berbimbing: ${q.scaffoldingTemplate || ""}\n`;
-        mdContent += `   *Penjelasan: ${q.explanation || ""}\n`;
+        mdContent += `  * *Contoh Bimbingan:* ${q.scaffoldingTemplate || ""}\n`;
+        mdContent += `  * *Penjelasan:* ${q.explanation || ""}\n`;
+      } else {
+        mdContent += `  * Jawaban: [_______________________]\n`;
       }
       mdContent += `\n`;
     });
 
-    mdContent += `\n---\n### 🔑 KUNCI JAWABAN (ANSWER KEY)\n`;
+    mdContent += `---\n\n`;
+    mdContent += `# 🔑 KUNCI JAWABAN & SOLUSI PENYELESAIAN (UNTUK REFERENSI)\n\n`;
     worksheet.questions.forEach((q, idx) => {
-      mdContent += `${idx + 1}. ${q.answer} (${q.explanation || "Hasil Akhir"})\n`;
+      mdContent += `**Soal ${idx + 1}:**\n`;
+      mdContent += `* Kunci Jawaban: **${q.answer}**\n`;
+      if (q.explanation) {
+        mdContent += `* Penjelasan Langkah: *${q.explanation}*\n`;
+      }
+      mdContent += `\n`;
     });
+
+    mdContent += `\n*Lembar kerja ini dihasilkan secara otomatis oleh StepUp Study Matematika Generator.*`;
 
     const blob = new Blob([mdContent], { type: "text/markdown;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -270,10 +292,12 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
 
           <button
             onClick={handleDownloadMarkdown}
-            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 cursor-pointer"
-            title="Download Markdown"
+            className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+            title="Download Soal (.md)"
+            id="btn-download-worksheet-header"
           >
-            <FileDown className="w-4 h-4" />
+            <FileDown className="w-3.5 h-3.5 text-blue-600" />
+            Unduh
           </button>
 
           <button
@@ -554,17 +578,27 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
             </div>
 
             {/* Print Friendly action */}
-            <div className="mt-12 pt-6 border-t border-slate-200 flex justify-between items-center print:hidden">
-              <span className="text-xs text-slate-400">
-                Gunakan tombol cetak untuk mencetak langsung ke kertas fisik atau file PDF.
+            <div className="mt-12 pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 print:hidden">
+              <span className="text-xs text-slate-400 text-center sm:text-left">
+                Gunakan tombol di bawah untuk mencetak langsung atau mengunduh lembar kerja ini.
               </span>
-              <button
-                onClick={handlePrint}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 text-xs cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                Cetak ke Kertas/PDF
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={handleDownloadMarkdown}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
+                  id="btn-download-worksheet-print-footer"
+                >
+                  <FileDown className="w-4 h-4 text-blue-600" />
+                  Unduh Soal (.md)
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  Cetak ke Kertas/PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
