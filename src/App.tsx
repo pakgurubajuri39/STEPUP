@@ -4,6 +4,8 @@ import LevelExplorer from "./components/LevelExplorer";
 import WorksheetGenerator from "./components/WorksheetGenerator";
 import WorksheetViewer from "./components/WorksheetViewer";
 import WorksheetHistoryList from "./components/WorksheetHistoryList";
+import PlacementTest from "./components/PlacementTest";
+import { KUMON_CURRICULUM } from "./curriculum";
 import {
   GraduationCap,
   History,
@@ -14,7 +16,8 @@ import {
   BookMarked,
   LayoutDashboard,
   HelpCircle,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from "lucide-react";
 
 export default function App() {
@@ -29,6 +32,7 @@ export default function App() {
   // Selection link between LevelExplorer and Generator
   const [selectedLevelFromExplorer, setSelectedLevelFromExplorer] = useState<CurriculumLevel | null>(null);
   const [selectedTopicFromExplorer, setSelectedTopicFromExplorer] = useState<CurriculumTopic | null>(null);
+  const [isPlacementTestActive, setIsPlacementTestActive] = useState<boolean>(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -125,6 +129,26 @@ export default function App() {
     }
   };
 
+  const handleSelectFromPlacementTest = (levelId: string, topicName: string) => {
+    // Find the level in the curriculum
+    const matchedLevel = KUMON_CURRICULUM.find(l => l.id === levelId);
+    if (matchedLevel) {
+      const matchedTopic = matchedLevel.topics.find(t => t.name === topicName) || matchedLevel.topics[0];
+      setSelectedLevelFromExplorer(matchedLevel);
+      setSelectedTopicFromExplorer(matchedTopic);
+      setIsPlacementTestActive(false);
+      setActiveWorksheet(null);
+      
+      // Scroll to generator
+      setTimeout(() => {
+        const genSection = document.getElementById("worksheet-generator");
+        if (genSection) {
+          genSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  };
+
   // Stats calculations
   const totalSolved = history.length;
   const averageScore =
@@ -154,7 +178,21 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-semibold flex items-center gap-1 shadow-sm">
+            <button
+              onClick={() => {
+                setIsPlacementTestActive(!isPlacementTestActive);
+                setActiveWorksheet(null);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition border ${
+                isPlacementTestActive
+                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              Tes Penempatan Level
+            </button>
+            <span className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm">
               <TrendingUp className="w-3 h-3 text-blue-600" />
               Belajar Mandiri
             </span>
@@ -253,9 +291,20 @@ export default function App() {
             </div>
           </div>
 
-          {/* RIGHT VIEW COLUMN: WORKSHEET VIEWER OR CURRICULUM EXPLORER */}
+          {/* RIGHT VIEW COLUMN: WORKSHEET VIEWER, PLACEMENT TEST OR CURRICULUM EXPLORER */}
           <div className="lg:col-span-8 space-y-8" id="right-workspace-column">
-            {activeWorksheet ? (
+            {isPlacementTestActive ? (
+              <div>
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5 print:hidden">
+                  <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  Tes Penempatan Level Aktif
+                </h3>
+                <PlacementTest
+                  onSelectLevelTopic={handleSelectFromPlacementTest}
+                  onClose={() => setIsPlacementTestActive(false)}
+                />
+              </div>
+            ) : activeWorksheet ? (
               <div>
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5 print:hidden">
                   <GraduationCap className="w-4 h-4 text-blue-600" />
@@ -282,9 +331,19 @@ export default function App() {
                     yang disesuaikan secara instan. Setiap lembar kerja dirancang menggunakan prinsip **Small Steps** agar siswa dapat 
                     memahami konsep dengan mudah tanpa bimbingan intensif.
                   </p>
-                  <div className="text-xs font-semibold text-blue-700 flex items-center gap-1.5 bg-blue-50/50 border border-blue-100 px-3 py-1.5 rounded-lg w-fit">
-                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                    Silakan klik "Buat Soal" pada materi manapun di tabel kurikulum untuk langsung mengujinya!
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => setIsPlacementTestActive(true)}
+                      className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                      id="banner-btn-placement-test"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                      🎯 Ikuti Tes Penempatan Level
+                    </button>
+                    <div className="text-xs font-semibold text-blue-700 flex items-center gap-1.5 bg-blue-50/50 border border-blue-100 px-3 py-1.5 rounded-lg w-fit">
+                      <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                      Atau silakan klik "Buat Soal" pada tabel kurikulum di bawah!
+                    </div>
                   </div>
                 </div>
 
