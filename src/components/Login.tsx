@@ -160,23 +160,6 @@ export default function Login({ onLoginSuccess, onNavigateToHome }: LoginProps) 
               {success ? "Masuk..." : "Masuk Kelas"}
             </button>
           </form>
-
-          {/* Prompt displaying hints about credentials */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Demo Akses Akun:</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-500">
-              <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                <p className="font-bold text-slate-700">Akun Siswa:</p>
-                <p>U: <code className="font-mono text-blue-600 bg-blue-50 px-1 rounded">lelak</code></p>
-                <p>P: <code className="font-mono text-blue-600 bg-blue-50 px-1 rounded">stepupmath</code></p>
-              </div>
-              <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                <p className="font-bold text-slate-700">Akun Admin:</p>
-                <p>U: <code className="font-mono text-blue-600 bg-blue-50 px-1 rounded">admin</code></p>
-                <p>P: <code className="font-mono text-blue-600 bg-blue-50 px-1 rounded">bajuri39</code></p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
