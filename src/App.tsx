@@ -5,6 +5,8 @@ import WorksheetGenerator from "./components/WorksheetGenerator";
 import WorksheetViewer from "./components/WorksheetViewer";
 import WorksheetHistoryList from "./components/WorksheetHistoryList";
 import PlacementTest from "./components/PlacementTest";
+import Home from "./components/Home";
+import Login from "./components/Login";
 import { KUMON_CURRICULUM } from "./curriculum";
 import {
   GraduationCap,
@@ -21,6 +23,23 @@ import {
 } from "lucide-react";
 
 export default function App() {
+  // Screen/View router states
+  const [currentView, setCurrentView] = useState<'home' | 'login' | 'app'>(() => {
+    try {
+      const savedUser = localStorage.getItem("stepup_logged_in_user");
+      return savedUser ? 'app' : 'home';
+    } catch {
+      return 'home';
+    }
+  });
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem("stepup_logged_in_user") || null;
+    } catch {
+      return null;
+    }
+  });
+
   // Application states
   const [activeWorksheet, setActiveWorksheet] = useState<Worksheet | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -160,6 +179,23 @@ export default function App() {
       ? Math.round(history.reduce((acc, curr) => acc + curr.timeSpentSeconds, 0) / 60)
       : 0;
 
+  if (currentView === "home") {
+    return <Home onNavigateToLogin={() => setCurrentView("login")} />;
+  }
+
+  if (currentView === "login") {
+    return (
+      <Login
+        onLoginSuccess={(user) => {
+          setLoggedInUser(user);
+          localStorage.setItem("stepup_logged_in_user", user);
+          setCurrentView("app");
+        }}
+        onNavigateToHome={() => setCurrentView("home")}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800 pb-16 bg-[#f4f4f5]" id="stepup-math-app">
       {/* Top Main Navigation Header */}
@@ -167,11 +203,11 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Clean Minimalism Logo style from the spec */}
-            <div className="flex flex-col">
+            <div className="flex flex-col cursor-pointer" onClick={() => setCurrentView("home")}>
               <span className="text-[10px] font-bold tracking-widest text-blue-600 uppercase">
-                StepUp
+                StepUp Study
               </span>
-              <h1 className="text-lg font-bold text-slate-900 leading-none">
+              <h1 className="text-sm font-black text-slate-900 leading-none">
                 Math Generator Engine
               </h1>
             </div>
@@ -196,6 +232,27 @@ export default function App() {
               <TrendingUp className="w-3 h-3 text-blue-600" />
               Belajar Mandiri
             </span>
+
+            {/* User Session Info & Log Out */}
+            {loggedInUser && (
+              <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
+                <span className="text-xs font-bold text-slate-600 px-2 py-1 bg-slate-100 rounded-lg">
+                  👤 {loggedInUser}
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("stepup_logged_in_user");
+                    setLoggedInUser(null);
+                    setCurrentView("home");
+                  }}
+                  className="px-2.5 py-1.5 text-xs font-bold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 rounded-lg transition-all cursor-pointer"
+                  id="btn-logout"
+                  title="Keluar dari akun belajar"
+                >
+                  Keluar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -372,7 +429,7 @@ export default function App() {
           Ditenagai oleh Gemini 3.5 Flash server-side AI.
         </p>
         <p className="font-semibold text-slate-500 mt-2">
-          @Copyright Pak GuruAI
+          @Copyright by. Pak GuruAI
         </p>
       </footer>
     </div>
