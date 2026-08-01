@@ -9,6 +9,7 @@ import {
   Printer,
   CheckCircle,
   FileDown,
+  FileText,
   Eye,
   EyeOff,
   Clock,
@@ -152,6 +153,415 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
     window.print();
   };
 
+  // Helper to escape special HTML characters
+  const escapeHtml = (str: string): string => {
+    if (!str) return "";
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  // Download complete standalone ready-to-print HTML file
+  const handleDownloadHtml = () => {
+    const sanitizeFilename = (str: string) => str.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    const questionsHtml = worksheet.questions
+      .map((q) => {
+        let exampleBlock = "";
+        if (q.isExample) {
+          let scaffoldingHtml = "";
+          if (q.scaffoldingTemplate) {
+            const parts = q.scaffoldingTemplate.split(/\[(.*?)\]/);
+            scaffoldingHtml = `<div class="scaffolding-box"><strong>Alur Bimbingan:</strong> ${parts
+              .map((p, idx) =>
+                idx % 2 !== 0
+                  ? `<span class="fill-box">${escapeHtml(p.trim()) || "?"}</span>`
+                  : escapeHtml(p)
+              )
+              .join("")}</div>`;
+          }
+          exampleBlock = `
+            <div class="example-box">
+              <p><strong>Langkah Bimbingan:</strong> ${escapeHtml(q.explanation || "")}</p>
+              ${scaffoldingHtml}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="question-card">
+            <div class="question-header">
+              <span class="q-num">[ ${q.questionNumber} ]</span>
+              <div class="q-text">${escapeHtml(q.questionText)}</div>
+            </div>
+            ${exampleBlock}
+            ${!q.isExample ? `<div class="answer-space">Jawaban: <span class="answer-line"></span></div>` : ""}
+          </div>
+        `;
+      })
+      .join("");
+
+    const answerKeyHtml = worksheet.questions
+      .map(
+        (q) => `
+        <div class="key-item">
+          <strong>Soal ${q.questionNumber}:</strong> <span class="ans-value">${escapeHtml(q.answer)}</span>
+          ${q.explanation ? `<br/><small class="exp-text">Langkah: ${escapeHtml(q.explanation)}</small>` : ""}
+        </div>
+      `
+      )
+      .join("");
+
+    const fullHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lembar Kerja Level ${escapeHtml(worksheet.level)} - ${escapeHtml(worksheet.topic)}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .paper-card {
+      max-width: 850px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e2e8f0;
+    }
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px 24px;
+      border-radius: 12px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+    .action-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .print-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      font-weight: 800;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s ease;
+    }
+    .print-btn:hover { background: #1d4ed8; }
+
+    .header-branding {
+      border-bottom: 3px solid #2563eb;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .app-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+    }
+    .app-subtitle {
+      font-size: 12px;
+      color: #2563eb;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .topic-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-top: 8px;
+      color: #1e293b;
+    }
+    .badge-wrap {
+      text-align: right;
+    }
+    .level-badge {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+    .sct-badge {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .student-info-grid {
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 18px;
+      background: #f8fafc;
+      margin-bottom: 28px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      font-size: 13px;
+    }
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .field-row label {
+      font-weight: 700;
+      color: #334155;
+      min-width: 90px;
+    }
+    .field-line {
+      flex: 1;
+      border-bottom: 1.5px dashed #94a3b8;
+      height: 18px;
+    }
+
+    .instruction-card {
+      background: #f1f5f9;
+      border-left: 4px solid #2563eb;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      color: #334155;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .questions-container {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .question-card {
+      border-bottom: 1px dashed #cbd5e1;
+      padding-bottom: 18px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .question-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .q-num {
+      font-family: monospace;
+      font-weight: 800;
+      color: #475569;
+      font-size: 16px;
+    }
+    .q-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .example-box {
+      margin-top: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .scaffolding-box {
+      margin-top: 8px;
+      font-family: monospace;
+      background: #eff6ff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #dbeafe;
+    }
+    .fill-box {
+      display: inline-block;
+      min-width: 30px;
+      padding: 2px 8px;
+      background: #ffffff;
+      border: 2px solid #3b82f6;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+      color: #1d4ed8;
+      margin: 0 3px;
+    }
+
+    .answer-space {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .answer-line {
+      display: inline-block;
+      width: 220px;
+      border-bottom: 2px dashed #94a3b8;
+      margin-left: 10px;
+    }
+
+    .answer-key-wrapper {
+      margin-top: 48px;
+      padding-top: 28px;
+      border-top: 2px solid #e2e8f0;
+      page-break-before: always;
+    }
+    .key-header {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 20px;
+    }
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .key-item {
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 12px;
+    }
+    .ans-value {
+      font-family: monospace;
+      font-weight: 800;
+      color: #047857;
+      font-size: 15px;
+    }
+    .exp-text {
+      color: #64748b;
+    }
+
+    .footer-credit {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 20px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        color: #000000 !important;
+      }
+      .paper-card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .top-actions {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="paper-card">
+    <div class="top-actions">
+      <div class="action-title">📄 Lembar Kerja StepUp Study (Format HTML Siap Cetak)</div>
+      <button class="print-btn" onclick="window.print()">🖨️ CETAK SEKARANG (PRINT / PDF)</button>
+    </div>
+
+    <div class="header-branding">
+      <div>
+        <div class="app-title">StepUp Study</div>
+        <div class="app-subtitle">Matematika Berjenjang • Metode Small Steps</div>
+        <div class="topic-title">${escapeHtml(worksheet.topic)}</div>
+      </div>
+      <div class="badge-wrap">
+        <div class="level-badge">LEVEL ${escapeHtml(worksheet.level)}</div>
+        <div class="sct-badge">Target SCT: ${worksheet.sctMinutes} Menit</div>
+      </div>
+    </div>
+
+    <div class="student-info-grid">
+      <div class="field-row">
+        <label>Nama Siswa:</label>
+        <div class="field-line"></div>
+      </div>
+      <div class="field-row">
+        <label>Tanggal:</label>
+        <div class="field-line"></div>
+      </div>
+      <div class="field-row">
+        <label>Nilai / Skor:</label>
+        <div class="field-line"></div>
+      </div>
+      <div class="field-row">
+        <label>Waktu Pengerjaan:</label>
+        <div class="field-line"></div>
+      </div>
+    </div>
+
+    <div class="instruction-card">
+      <strong>Instruksi:</strong> ${escapeHtml(
+        worksheet.instruction || "Selesaikan operasi matematika berikut secara cermat, rapi, dan mandiri."
+      )}
+    </div>
+
+    <div class="questions-container">
+      ${questionsHtml}
+    </div>
+
+    <div class="answer-key-wrapper">
+      <div class="key-header">🔑 KUNCI JAWABAN & SOLUSI PENYELESAIAN (UNTUK REFERENSI)</div>
+      <div class="key-grid">
+        ${answerKeyHtml}
+      </div>
+    </div>
+
+    <div class="footer-credit">
+      @Copyright by. Pak GuruAI
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `StepUp_Math_Worksheet_Level_${worksheet.level}_${sanitizeFilename(worksheet.topic)}.html`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Download raw markdown file of the worksheet
   const handleDownloadMarkdown = () => {
     let mdContent = `# 📝 LEMBAR KERJA MATEMATIKA - STEPUP STUDY\n`;
@@ -283,21 +693,31 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
                 window.print();
               }, 100);
             }}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-            title="Cetak Lembar Kerja"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-xs font-bold text-white rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+            title="Cetak Lembar Kerja Langsung"
           >
             <Printer className="w-3.5 h-3.5" />
             Cetak
           </button>
 
           <button
+            onClick={handleDownloadHtml}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+            title="Unduh Lembar Kerja Format HTML (Siap Cetak)"
+            id="btn-download-worksheet-html-header"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            Unduh HTML (Siap Cetak)
+          </button>
+
+          <button
             onClick={handleDownloadMarkdown}
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-            title="Download Soal (.md)"
-            id="btn-download-worksheet-header"
+            title="Unduh Soal Format Markdown (.md)"
+            id="btn-download-worksheet-md-header"
           >
-            <FileDown className="w-3.5 h-3.5 text-blue-600" />
-            Unduh
+            <FileText className="w-3.5 h-3.5 text-blue-600" />
+            .md
           </button>
 
           <button
@@ -582,21 +1002,29 @@ export default function WorksheetViewer({ worksheet, onSaveToHistory, onClose }:
               <span className="text-xs text-slate-400 text-center sm:text-left">
                 Gunakan tombol di bawah untuk mencetak langsung atau mengunduh lembar kerja ini.
               </span>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                <button
+                  onClick={handleDownloadHtml}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
+                  id="btn-download-worksheet-html-footer"
+                >
+                  <FileDown className="w-4 h-4" />
+                  Unduh HTML (Siap Cetak)
+                </button>
                 <button
                   onClick={handleDownloadMarkdown}
                   className="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
-                  id="btn-download-worksheet-print-footer"
+                  id="btn-download-worksheet-md-footer"
                 >
-                  <FileDown className="w-4 h-4 text-blue-600" />
-                  Unduh Soal (.md)
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  Unduh (.md)
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
-                  Cetak ke Kertas/PDF
+                  Cetak Langsung
                 </button>
               </div>
             </div>
